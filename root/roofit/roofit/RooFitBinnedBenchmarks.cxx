@@ -234,7 +234,7 @@ static void BM_RooFit_BinnedTestMigrad_NChannel(benchmark::State &state)
 // BENCHMARK(BM_RooFit_BinnedTestMigrad)->Unit(benchmark::kMicrosecond)->Arg(2)->UseRealTime();
 // KNL scaling
 // BENCHMARK(BM_RooFit_BinnedTestMigrad)->Range(8, 128)->UseRealTime();
-BENCHMARK(BM_RooFit_BinnedTestMigrad_NChannel)->Ranges({{1, 8}, {1, 8}})->UseRealTime();
+//BENCHMARK(BM_RooFit_BinnedTestMigrad_NChannel)->Ranges({{1, 8}, {1, 8}})->UseRealTime();
 
 static void BM_RooFit_BinnedTestHesse(benchmark::State &state)
 {
