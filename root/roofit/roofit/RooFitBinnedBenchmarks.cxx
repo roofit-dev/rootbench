@@ -187,9 +187,6 @@ static void BM_RooFit_BinnedTestMigrad(benchmark::State &state)
 static void BM_RooFit_BinnedTestMigrad_RooGaussMinimizer(benchmark::State &state)
 {
   gErrorIgnoreLevel = kInfo;
-//   RooMsgService::instance().getStream(1).removeTopic(RooFit::Minimization);
-//   RooMsgService::instance().getStream(1).removeTopic(RooFit::NumIntegration);
-//   RooMsgService::instance().getStream(1).removeTopic(RooFit::Eval);
   RooMsgService::instance().setGlobalKillBelow(RooFit::FATAL);
 
   int cpu = state.range(0);
@@ -207,7 +204,6 @@ static void BM_RooFit_BinnedTestMigrad_RooGaussMinimizer(benchmark::State &state
   RooGaussMinimizer m(*nll);
   m.setPrintLevel(-1);
   m.setStrategy(0);
-//   m.setProfile(1);
   m.setLogFile("benchmigradlog");
   while (state.KeepRunning()) {
     m.migrad();
