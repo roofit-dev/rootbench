@@ -11,6 +11,7 @@
 #include "RooStats/ModelConfig.h"
 #include "RooLinkedListIter.h"
 #include "RooRealSumPdf.h"
+#include "RooGaussMinimizer.h"
 
 #include "benchmark/benchmark.h"
 
@@ -185,6 +186,41 @@ static void BM_RooFit_BinnedTestMigrad(benchmark::State &state)
    delete mc;
    delete pdf;
    delete nll;
+}
+
+static void BM_RooFit_BinnedTestMigrad_RooGaussMinimizer(benchmark::State &state)
+{
+  gErrorIgnoreLevel = kInfo;
+//   RooMsgService::instance().getStream(1).removeTopic(RooFit::Minimization);
+//   RooMsgService::instance().getStream(1).removeTopic(RooFit::NumIntegration);
+//   RooMsgService::instance().getStream(1).removeTopic(RooFit::Eval);
+  RooMsgService::instance().setGlobalKillBelow(RooFit::FATAL);
+
+  int cpu = state.range(0);
+  TFile *infile = new TFile("workspace.root");
+  if (infile->IsZombie()) {
+    buildBinnedTest();
+    std::cout << "Workspace for tests was created!" << std::endl;
+  }
+  infile = TFile::Open("workspace.root");
+  RooWorkspace *w = static_cast<RooWorkspace *>(infile->Get("BinnedWorkspace"));
+  RooAbsData *data = w->data("obsData");
+  ModelConfig *mc = static_cast<ModelConfig *>(w->genobj("ModelConfig"));
+  RooAbsPdf *pdf = w->pdf(mc->GetPdf()->GetName());
+  RooAbsReal *nll = pdf->createNLL(*data, NumCPU(cpu, 0));
+  RooGaussMinimizer m(*nll);
+  m.setPrintLevel(-1);
+  m.setStrategy(0);
+//   m.setProfile(1);
+  m.setLogFile("benchmigradlog");
+  while (state.KeepRunning()) {
+    m.migrad();
+  }
+  delete data;
+  delete infile;
+  delete mc;
+  delete pdf;
+  delete nll;
 }
 
 // BENCHMARK(BM_RooFit_BinnedTestMigrad)->Unit(benchmark::kMicrosecond)->Arg(2)->UseRealTime();
