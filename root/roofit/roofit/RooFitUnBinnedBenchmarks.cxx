@@ -4,10 +4,12 @@
 #include "RooRealVar.h"
 #include "RooDataSet.h"
 #include "RooGaussian.h"
+#include "RooGaussModel.h"
 #include "RooCategory.h"
 #include "RooBMixDecay.h"
 #include "RooBCPEffDecay.h"
 #include "RooBDecay.h"
+#include "RooDecay.h"
 #include "RooFormulaVar.h"
 #include "RooTruthModel.h"
 #include "TCanvas.h"
@@ -64,6 +66,56 @@ static void BM_RooFit_BDecayWithMixing(benchmark::State &state)
    delete nll;
 }
 
+static void BM_RooFit_BDecayGaussResolution(benchmark::State &state)
+{
+   gErrorIgnoreLevel = kInfo;
+   int events = state.range(0);
+   int cpu = state.range(1);
+
+   RooRealVar dt("dt","dt",-10,10) ;
+   dt.setBins(40) ;
+   // Parameters
+   RooRealVar dm("dm","delta m(B0)",0.472,0.1,0.9) ;
+   RooRealVar tau("tau","tau (B0)",1.547,1.3,1.9) ;
+   RooRealVar w("w","flavour mistag rate",0.1) ;
+   RooRealVar dw("dw","delta mistag rate for B0/B0bar",0.1) ;
+
+   RooCategory mixState("mixState","B0/B0bar mixing state") ;
+   mixState.defineType("mixed",-1) ;
+   mixState.defineType("unmixed",1) ;
+
+   RooCategory tagFlav("tagFlav","Flavour of the tagged B0") ;
+   tagFlav.defineType("B0",1) ;
+   tagFlav.defineType("B0bar",-1) ;
+
+   // Use delta function resolution model
+   RooTruthModel tm("tm","truth model",dt) ;
+   // Construct Bdecay with mixing
+   RooBMixDecay bmix("bmix","decay",dt,mixState,tagFlav,tau,dm,w,dw,tm,RooBMixDecay::DoubleSided) ;
+   // Build a gaussian resolution model
+   RooRealVar bias1("bias1","bias1",0, -1., 1.) ;
+   RooRealVar sigma1("sigma1","sigma1", 1, 0.1, 1.9) ;
+   RooGaussModel gm1("gm1","gauss model 1",dt,bias1,sigma1) ;
+
+   // Construct decay(t) (x) gauss1(t)
+   RooDecay decay_gm1("decay_gm1","decay",dt,tau,gm1,RooDecay::DoubleSided) ;
+
+   // Generate Some Data
+   RooDataSet* data = decay_gm1.generate(RooArgSet(dt,mixState,tagFlav),events);
+
+   // Create NLL
+   RooAbsReal *nll = decay_gm1.createNLL(*data, NumCPU(cpu, 0));
+   RooMinimizer m(*nll);
+   m.setPrintLevel(-1);
+   m.setStrategy(0);
+   m.setLogFile("benchmigradnchanellog");
+   while (state.KeepRunning()) {
+      m.migrad();
+   }
+   delete data;
+   delete nll;
+}
+
 
 static void EventArguments(benchmark::internal::Benchmark* b) {
   for (int i = 1; i <=10; ++i )
@@ -72,5 +124,6 @@ static void EventArguments(benchmark::internal::Benchmark* b) {
 }
 
 BENCHMARK(BM_RooFit_BDecayWithMixing)->Apply(EventArguments)->UseRealTime()->Iterations(12);
+BENCHMARK(BM_RooFit_BDecayGaussResolution)->Apply(EventArguments)->UseRealTime()->Iterations(12);
 
 BENCHMARK_MAIN();

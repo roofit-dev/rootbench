@@ -26,8 +26,9 @@ plottimes['real_time']=plottimes['real_time']*10**-9
 plottimes.rename(columns={'real_time':'time'},inplace = True)
 
 print plottimes
+times = plottimes[plottimes['type']!='cpu']
 
-g = sns.factorplot(x="events", y="time",hue="ncpus",col="type", data = plottimes, type='bar')
+g = sns.factorplot(x="events", y="time",hue="ncpus",col="type", data = times, type='bar')
 g.set_axis_labels("Number of Events", "Time (Seconds)").despine(left=True).set_xticklabels(rotation=45)
 
 cputimes = plottimes[plottimes['ncpus']>1]
