@@ -65,12 +65,12 @@ static void BM_RooFit_BDecayWithMixing(benchmark::State &state)
 }
 
 
-static void ChanArguments(benchmark::internal::Benchmark* b) {
-  for (int i = 1; i <11<<10; i+=1000)
+static void EventArguments(benchmark::internal::Benchmark* b) {
+  for (int i = 1; i <=10; ++i )
     for (int j = 1; j <= 4; ++j)
-      b->Args({i, j});
+      b->Args({i*100000, j});
 }
 
-BENCHMARK(BM_RooFit_BDecayWithMixing)->Apply(ChanArguments)->UseRealTime()->Iterations(12);
+BENCHMARK(BM_RooFit_BDecayWithMixing)->Apply(EventArguments)->UseRealTime()->Iterations(12);
 
 BENCHMARK_MAIN();
