@@ -166,6 +166,82 @@ static void BM_RooFit_BinnedTestMigrad_NChannel(benchmark::State &state)
    delete nll;
 }
 
+static void BM_RooFit_BinnedTestHesse_NChannel(benchmark::State &state)
+{
+   gErrorIgnoreLevel = kInfo;
+   int chan = state.range(0);
+   int cpu = state.range(1);
+   RooMsgService::instance().setGlobalKillBelow(RooFit::FATAL);
+
+   std::string workspace_file = "worspace" + std::to_string(chan) + std::to_string(cpu) + ".root";
+   TFile *infile = new TFile(workspace_file.c_str());
+   if (infile->IsZombie()) {
+      buildBinnedTest(chan, 30, 3, workspace_file.c_str());
+      std::cout << "Workspace for tests was created!" << std::endl;
+   }
+   infile = TFile::Open(workspace_file.c_str());
+   RooWorkspace *w = static_cast<RooWorkspace *>(infile->Get("BinnedWorkspace"));
+   RooAbsData *data = w->data("obsData");
+   ModelConfig *mc = static_cast<ModelConfig *>(w->genobj("ModelConfig"));
+   RooAbsPdf *pdf = w->pdf(mc->GetPdf()->GetName());
+   RooAbsReal *nll = pdf->createNLL(*data, NumCPU(cpu, 0));
+   RooArgSet* params = (RooArgSet*) pdf->getParameters(data) ;
+   w->saveSnapshot("no_fit", *params, kTRUE);
+   RooMinimizer m(*nll);
+   m.setPrintLevel(-1);
+   m.setStrategy(0);
+   m.setLogFile("benchmigradnchanellog");
+   m.migrad();
+   w->loadSnapshot("no_fit");
+   while (state.KeepRunning()) {
+      m.hesse();
+   }
+   delete data;
+   delete infile;
+   delete mc;
+   delete pdf;
+   delete nll;
+}
+
+
+static void BM_RooFit_BinnedTestMinos_NChannel(benchmark::State &state)
+{
+   gErrorIgnoreLevel = kInfo;
+   int chan = state.range(0);
+   int cpu = state.range(1);
+   RooMsgService::instance().setGlobalKillBelow(RooFit::FATAL);
+
+   std::string workspace_file = "worspace" + std::to_string(chan) + std::to_string(cpu) + ".root";
+   TFile *infile = new TFile(workspace_file.c_str());
+   if (infile->IsZombie()) {
+      buildBinnedTest(chan, 30, 3, workspace_file.c_str());
+      std::cout << "Workspace for tests was created!" << std::endl;
+   }
+   infile = TFile::Open(workspace_file.c_str());
+   RooWorkspace *w = static_cast<RooWorkspace *>(infile->Get("BinnedWorkspace"));
+   RooAbsData *data = w->data("obsData");
+   ModelConfig *mc = static_cast<ModelConfig *>(w->genobj("ModelConfig"));
+   RooAbsPdf *pdf = w->pdf(mc->GetPdf()->GetName());
+   RooAbsReal *nll = pdf->createNLL(*data, NumCPU(cpu, 0));
+   RooArgSet* params = (RooArgSet*) pdf->getParameters(data) ;
+   w->saveSnapshot("no_fit", *params, kTRUE);
+   RooMinimizer m(*nll);
+   m.setPrintLevel(-1);
+   m.setStrategy(0);
+   m.setLogFile("benchmigradnchanellog");
+   m.migrad();
+   m.hesse();
+   w->loadSnapshot("no_fit");
+   while (state.KeepRunning()) {
+      m.minos();
+   }
+   delete data;
+   delete infile;
+   delete mc;
+   delete pdf;
+   delete nll;
+}
+
 static void BM_RooFit_BinnedTestMigrad_NChannelNoAtt(benchmark::State &state)
 {
    gErrorIgnoreLevel = kInfo;
@@ -202,12 +278,15 @@ static void BM_RooFit_BinnedTestMigrad_NChannelNoAtt(benchmark::State &state)
 
 static void ChanArguments(benchmark::internal::Benchmark* b) {
   for (int i = 1; i <8; ++i)
-    for (int j = 1; j <= 4; ++j)
+    for (int j = 1; j < 4; ++j)
       b->Args({i, j});
 }
 
-BENCHMARK(BM_RooFit_BinnedTestMigrad_NChannel)->Apply(ChanArguments)->UseRealTime()->Iterations(12);
-BENCHMARK(BM_RooFit_BinnedTestMigrad_NChannelNoAtt)->Apply(ChanArguments)->UseRealTime()->Iterations(12);
+BENCHMARK(BM_RooFit_BinnedTestMigrad_NChannel)->Apply(ChanArguments)->UseRealTime()->Iterations(3);
+BENCHMARK(BM_RooFit_BinnedTestHesse_NChannel)->Apply(ChanArguments)->UseRealTime()->Iterations(3);
+BENCHMARK(BM_RooFit_BinnedTestMinos_NChannel)->Apply(ChanArguments)->UseRealTime()->Iterations(3);
+
+BENCHMARK(BM_RooFit_BinnedTestMigrad_NChannelNoAtt)->Apply(ChanArguments)->UseRealTime()->Iterations(3);
 
 static void BM_RooFit_BinnedTestMigrad_NBin(benchmark::State &state)
 {
@@ -241,6 +320,83 @@ static void BM_RooFit_BinnedTestMigrad_NBin(benchmark::State &state)
   delete pdf;
   delete nll;
 }
+
+static void BM_RooFit_BinnedTestHesse_NBin(benchmark::State &state)
+{
+  gErrorIgnoreLevel = kInfo;
+  int nbins = state.range(0);
+  int cpu = state.range(1);
+  RooMsgService::instance().setGlobalKillBelow(RooFit::FATAL);
+
+  std::string workspace_file = "worspace" + std::to_string(nbins) + std::to_string(cpu) + ".root";
+  TFile *infile = new TFile(workspace_file.c_str());
+  if (infile->IsZombie()) {
+    buildBinnedTest(2, nbins, 3, workspace_file.c_str());
+    std::cout << "Workspace for tests was created!" << std::endl;
+  }
+  infile = TFile::Open(workspace_file.c_str());
+  RooWorkspace *w = static_cast<RooWorkspace *>(infile->Get("BinnedWorkspace"));
+  RooAbsData *data = w->data("obsData");
+  ModelConfig *mc = static_cast<ModelConfig *>(w->genobj("ModelConfig"));
+  RooAbsPdf *pdf = w->pdf(mc->GetPdf()->GetName());
+  RooAbsReal *nll = pdf->createNLL(*data, NumCPU(cpu, 0));
+  RooArgSet* params = (RooArgSet*) pdf->getParameters(data) ;
+  w->saveSnapshot("no_fit", *params, kTRUE);
+  RooMinimizer m(*nll);
+  m.setPrintLevel(-1);
+  m.setStrategy(0);
+  m.setLogFile("benchmigradnchanellog");
+  m.migrad();
+  w->loadSnapshot("no_fit");
+  while (state.KeepRunning()) {
+    m.hesse();
+  }
+  delete data;
+  delete infile;
+  delete mc;
+  delete pdf;
+  delete nll;
+}
+
+static void BM_RooFit_BinnedTestMinos_NBin(benchmark::State &state)
+{
+  gErrorIgnoreLevel = kInfo;
+  int nbins = state.range(0);
+  int cpu = state.range(1);
+  RooMsgService::instance().setGlobalKillBelow(RooFit::FATAL);
+
+  std::string workspace_file = "worspace" + std::to_string(nbins) + std::to_string(cpu) + ".root";
+  TFile *infile = new TFile(workspace_file.c_str());
+  if (infile->IsZombie()) {
+    buildBinnedTest(2, nbins, 3, workspace_file.c_str());
+    std::cout << "Workspace for tests was created!" << std::endl;
+  }
+  infile = TFile::Open(workspace_file.c_str());
+  RooWorkspace *w = static_cast<RooWorkspace *>(infile->Get("BinnedWorkspace"));
+  RooAbsData *data = w->data("obsData");
+  ModelConfig *mc = static_cast<ModelConfig *>(w->genobj("ModelConfig"));
+  RooAbsPdf *pdf = w->pdf(mc->GetPdf()->GetName());
+  RooAbsReal *nll = pdf->createNLL(*data, NumCPU(cpu, 0));
+  RooArgSet* params = (RooArgSet*) pdf->getParameters(data) ;
+  w->saveSnapshot("no_fit", *params, kTRUE);
+  RooMinimizer m(*nll);
+  m.setPrintLevel(-1);
+  m.setStrategy(0);
+  m.setLogFile("benchmigradnchanellog");
+  m.migrad();
+  m.hesse();
+  w->loadSnapshot("no_fit");
+  while (state.KeepRunning()) {
+    m.minos();
+  }
+  
+  delete data;
+  delete infile;
+  delete mc;
+  delete pdf;
+  delete nll;
+}
+
 static void BM_RooFit_BinnedTestMigrad_NBinNoAttr(benchmark::State &state)
 {
   gErrorIgnoreLevel = kInfo;
@@ -280,7 +436,10 @@ static void BinArguments(benchmark::internal::Benchmark* b) {
       b->Args({i, j});
 }
 
-BENCHMARK(BM_RooFit_BinnedTestMigrad_NBin)->Apply(BinArguments)->UseRealTime()->Iterations(12);
-BENCHMARK(BM_RooFit_BinnedTestMigrad_NBinNoAttr)->Apply(BinArguments)->UseRealTime()->Iterations(12);
+BENCHMARK(BM_RooFit_BinnedTestMigrad_NBin)->Apply(BinArguments)->UseRealTime()->Iterations(3);
+BENCHMARK(BM_RooFit_BinnedTestHesse_NBin)->Apply(BinArguments)->UseRealTime()->Iterations(3);
+BENCHMARK(BM_RooFit_BinnedTestMinos_NBin)->Apply(BinArguments)->UseRealTime()->Iterations(3);
+
+BENCHMARK(BM_RooFit_BinnedTestMigrad_NBinNoAttr)->Apply(BinArguments)->UseRealTime()->Iterations(3);
 
 BENCHMARK_MAIN();
