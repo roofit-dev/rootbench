@@ -24,6 +24,7 @@
 #include "RooLinkedListIter.h"
 #include "RooRealSumPdf.h"
 #include "RooNLLVar.h"
+#include "RooAddition.h"
 #include <MultiProcess/NLLVar.h>
 
 
@@ -189,7 +190,7 @@ static void BM_RooFit_BinnedMultiProc(benchmark::State &state)
    RooAbsReal *nll = pdf->createNLL(*data);
 
    std::size_t NumCPU = cpu;
-
+   if(dynamic_cast<RooAddition*>(nll)) { std::cout << "indeed, nll is a RooAddition" << std::endl;}
 
    std::cout << "About to initialise MultiProcess"<< std::endl;
    MultiProcess::NLLVar nll_mp(NumCPU, MultiProcess::NLLVarTask::bulk_partition, *dynamic_cast<RooNLLVar*>(nll));
@@ -427,6 +428,6 @@ static void BinArguments(benchmark::internal::Benchmark* b) {
 }
 
 BENCHMARK(BM_RooFit_BinnedMPFE)->Apply(BinArguments)->UseRealTime()->Unit(benchmark::kMicrosecond)->Iterations(10);
-BENCHMARK(BM_RooFit_BinnedMultiProc)->Apply(BinArguments)->UseRealTime()->Unit(benchmark::kMicrosecond)->Iterations(10);
+//BENCHMARK(BM_RooFit_BinnedMultiProc)->Apply(BinArguments)->UseRealTime()->Unit(benchmark::kMicrosecond)->Iterations(10);
 
 BENCHMARK_MAIN();
