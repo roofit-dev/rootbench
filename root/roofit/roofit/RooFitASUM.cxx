@@ -11,6 +11,10 @@
 #include "RooCategory.h"
 #include "RooPolynomial.h"
 #include "RooFormulaVar.h"
+#include "RooParamHistFunc.h"
+#include "RooHistConstraint.h"
+#include "RooRealSumPdf.h"
+#include "RooProdPdf.h"
 #include "RooDataHist.h"
 #include "TCanvas.h"
 #include "RooPlot.h"
@@ -289,6 +293,47 @@ static void BM_RooFit_HistStatNom(benchmark::State &state)
    delete nll;
 }
 
+static void BM_RooFit_ShortStat(benchmark::State &state)
+{
+   gErrorIgnoreLevel = kInfo;
+   RooMsgService::instance().setGlobalKillBelow(RooFit::FATAL);
+   RooMsgService::instance().getStream(1).removeTopic(RooFit::Minimization);
+   RooMsgService::instance().getStream(1).removeTopic(RooFit::NumIntegration);
+   RooMsgService::instance().getStream(1).removeTopic(RooFit::Eval);
+   int bins = state.range(0);
+   int cpu = state.range(1);
+   TFile *infile = new TFile("StatShortworkspace.root","RECREATE");
+   //   if (infile->IsZombie()) {
+   buildBinnedTest(bins, 3, "StatShortworkspace.root");
+   std::cout << "Workspace for tests was created!" << std::endl;
+   //}
+   infile = TFile::Open("StatShortworkspace.root");
+   RooWorkspace *w = static_cast<RooWorkspace *>(infile->Get("BinnedWorkspace"));
+   RooAbsData *data = w->data("obsData");
+   ModelConfig *mc = static_cast<ModelConfig *>(w->genobj("ModelConfig"));
+   RooAbsPdf *pdf = w->pdf(mc->GetPdf()->GetName());
+   RooArgSet * allParams = pdf->getParameters(data);
+   RemoveConstantParameters(allParams);
+   RooAbsReal *nll = pdf->createNLL(*data, NumCPU(cpu, 0));
+   RooMinimizer m(*nll);
+   m.setPrintLevel(-1);
+   m.setStrategy(0);
+   m.setProfile(0);
+   m.setLogFile("HNlog");
+   RooArgSet * printpars= pdf->getParameters(data);
+   std::cout<<"How many parameters"<<std::endl;
+   printpars->Print();
+   for (auto _ : state) {
+      m.migrad();
+   }
+   delete data;
+   delete infile;
+   delete mc;
+   delete pdf;
+   delete nll;
+}
+
+
 static void BM_RooFit_HistStatHistoSys(benchmark::State &state)
 {
    gErrorIgnoreLevel = kInfo;
@@ -475,9 +520,9 @@ static void BM_RooFit_Interp(benchmark::State &state)
    //   w.function("pi_sig")->setPositiveDefinite(kTRUE);
    //   w.function("pi_sig")->setAllInterpCodes(4);
 
-   w.factory("ASUM::model(mu[1,0,5]hf_sig,nu[1]*hf_bkg)");
+   w.factory("ASUM::model(mu[1,0,5]*pi_sig,nu[1]*hf_bkg)");
    w.factory("Gaussian::constraint(alpha,0,1)");
-   w.factory("PROD::model2(model,alpha)");
+   w.factory("PROD::model2(model,constraint)");
 
    RooFIter iter = w.components().fwdIterator();
    RooAbsArg *arg;
@@ -490,8 +535,8 @@ static void BM_RooFit_Interp(benchmark::State &state)
 
    RooDataHist *data = w.pdf("model2")->generateBinned(x, 1100000);
    w.import(*data);
-   w.SetName("ASUMWorkspace");
-   w.writeToFile("ASUMworkspace.root");
+   w.SetName("Interpworkspace");
+   w.writeToFile("Interpworkspace.root");
 
    // Create NLL
    RooAbsPdf * pdf = w.pdf("model2");
@@ -512,6 +557,73 @@ static void BM_RooFit_Interp(benchmark::State &state)
    delete nll;
 }
 
+static void BM_RooFit_BBlite(benchmark::State &state)
+{
+   gErrorIgnoreLevel = kInfo;
+   int bins = state.range(0);
+   int cpu = state.range(1);
+
+   RooRealVar x("x","x",0,bins) ;
+   x.setBins(bins) ;
+   // Parameters
+   RooRealVar a0("a0","a0",0) ;
+   RooRealVar a1("a1","a1",1,0,2) ;
+   RooRealVar a2("a2","a2",0);
+
+   RooPolynomial p0("p0","p0",x);
+   RooPolynomial p1("p1","p1",x,RooArgList(a0,a1,a2),0);
+
+   RooDataHist *dh_bkg = p0.generateBinned(x, 1000000000);
+   RooDataHist *dh_sig = p1.generateBinned(x, 100000000);
+   dh_bkg->SetName("dh_bkg");
+   dh_sig->SetName("dh_sig");
+   RooParamHistFunc p_ph_sig("p_ph_sig","p_ph_sig",*dh_sig) ;
+   RooParamHistFunc p_ph_bkg("p_ph_bkg","p_ph_bkg",*dh_bkg) ; 
+   RooParamHistFunc p_ph_bkg2("p_ph_bkg","p_ph_bkg",*dh_bkg,p_ph_sig,1) ; 
+   RooRealVar mu("mu","mu",1,0.01,10) ;
+   RooRealVar nu("nu","nu",1) ;
+   RooRealSumPdf model2_tmp("sp_ph","sp_ph",RooArgList(p_ph_sig,p_ph_bkg2),RooArgList(mu,nu),kTRUE) ;
+   RooHistConstraint hc_sigbkg("hc_sigbkg","hc_sigbkg",RooArgSet(p_ph_sig,p_ph_bkg2)) ;
+   RooProdPdf model2("model2","model2",hc_sigbkg,Conditional(model2_tmp,x)) ;
+
+   RooWorkspace w = RooWorkspace("w");
+   w.import(x);
+   w.import(*dh_sig);
+   w.import(*dh_bkg);
+   w.import(model2);
+
+   RooFIter iter = w.components().fwdIterator();
+   RooAbsArg *arg;
+   while ((arg = iter.next())) {
+      if (arg->IsA() == RooRealSumPdf::Class()) {
+         arg->setAttribute("BinnedLikelihood");
+         std::cout << "component " << arg->GetName() << " is a binned likelihood" << std::endl;
+      }
+   }
+
+   RooDataHist *data = model2.generateBinned(x, 1100000);
+   w.import(*data);
+   w.SetName("BBworkspace");
+   w.writeToFile("BBworkspace.root");
+
+   // Create NLL
+   RooArgSet * allParams = model2.getParameters(data);
+   RemoveConstantParameters(allParams);
+   RooAbsReal *nll = model2.createNLL(*data, NumCPU(cpu, 0));
+   RooMinimizer m(*nll);
+   m.setPrintLevel(-1);
+   m.setStrategy(0);
+   m.setLogFile("interplog");
+   RooArgSet * printpars= model2.getParameters(data);
+   std::cout<<"How many parameters"<<std::endl;
+   printpars->Print();
+   while (state.KeepRunning()) {
+      m.migrad();
+   }
+   delete data;
+   delete nll;
+}
+
 
 static void BinArguments(benchmark::internal::Benchmark* b) {
   for (int i = 1; i <=10; ++i )
@@ -519,11 +631,11 @@ static void BinArguments(benchmark::internal::Benchmark* b) {
       b->Args({i*10000, j});
 }
 
-BENCHMARK(BM_RooFit_ASUM)->Apply(BinArguments)->UseRealTime()->Iterations(120);
-BENCHMARK(BM_RooFit_Interp)->Apply(BinArguments)->UseRealTime()->Iterations(120);
-BENCHMARK(BM_RooFit_Histfactory)->Apply(BinArguments)->UseRealTime()->Iterations(120);
-BENCHMARK(BM_RooFit_HistInterp)->Apply(BinArguments)->UseRealTime()->Iterations(120);
-BENCHMARK(BM_RooFit_HistNorm)->Apply(BinArguments)->UseRealTime()->Iterations(120);
+BENCHMARK(BM_RooFit_ASUM)->Apply(BinArguments)->UseRealTime()->Iterations(12);
+BENCHMARK(BM_RooFit_Interp)->Apply(BinArguments)->UseRealTime()->Iterations(12);
+BENCHMARK(BM_RooFit_Histfactory)->Apply(BinArguments)->UseRealTime()->Iterations(12);
+BENCHMARK(BM_RooFit_HistInterp)->Apply(BinArguments)->UseRealTime()->Iterations(12);
+BENCHMARK(BM_RooFit_HistNorm)->Apply(BinArguments)->UseRealTime()->Iterations(12);
 
 static void SmallArguments(benchmark::internal::Benchmark* b) {
   for (int i = 1; i <=10; ++i )
@@ -531,9 +643,17 @@ static void SmallArguments(benchmark::internal::Benchmark* b) {
       b->Args({i*10, j});
 }
 
-// BENCHMARK(BM_RooFit_HistStatNom)->Apply(SmallArguments)->UseRealTime()->Iterations(120);
-// BENCHMARK(BM_RooFit_HistStatHistoSys)->Apply(SmallArguments)->UseRealTime()->Iterations(120);
-// BENCHMARK(BM_RooFit_HistStatTwoChannel)->Apply(SmallArguments)->UseRealTime()->Iterations(120);
+// BENCHMARK(BM_RooFit_BBlite)->Apply(SmallArguments)->UseRealTime()->Iterations(12);
+BENCHMARK(BM_RooFit_HistStatNom)->Apply(SmallArguments)->UseRealTime()->Iterations(12);
+BENCHMARK(BM_RooFit_HistStatHistoSys)->Apply(SmallArguments)->UseRealTime()->Iterations(12);
+BENCHMARK(BM_RooFit_HistStatTwoChannel)->Apply(SmallArguments)->UseRealTime()->Iterations(12);
 
+static void TinyArguments(benchmark::internal::Benchmark* b) {
+  for (int i = 2; i <=20; ++i )
+    for (int j = 1; j <= 3; ++j)
+      b->Args({i, j});
+}
+
+BENCHMARK(BM_RooFit_ShortStat)->Apply(TinyArguments)->UseRealTime()->Iterations(12);
 
 BENCHMARK_MAIN();
