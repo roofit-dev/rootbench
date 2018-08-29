@@ -7,6 +7,10 @@ RB_ADD_GBENCHMARK(RoofitUnBinnedBenchmark
   RooFitUnBinnedBenchmarks.cxx
   LIBRARIES Core Hist MathCore RIO RooFit RooStats RooFitCore HistFactory)
 
+RB_ADD_GBENCHMARK(RoofitASUM
+  RooFitASUM.cxx
+  LIBRARIES Core Hist MathCore RIO RooFit RooStats RooFitCore HistFactory)
+
 RB_ADD_GBENCHMARK(RoofitMultiproc
   RooFitMultiproc.cxx
   LIBRARIES Core Hist MathCore RIO RooFit RooStats RooFitCore HistFactory)

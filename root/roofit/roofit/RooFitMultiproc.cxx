@@ -25,7 +25,7 @@
 #include "RooRealSumPdf.h"
 #include "RooNLLVar.h"
 #include "RooAddition.h"
-#include <MultiProcess/NLLVar.h>
+//#include <MultiProcess/NLLVar.h>
 
 
 using namespace RooFit ;
