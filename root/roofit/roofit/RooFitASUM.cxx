@@ -738,20 +738,22 @@ static void BM_RooFit_BBlite(benchmark::State &state)
       }
    }
 
-   RooDataHist *data = model2.generateBinned(x, 1100);
+   RooAbsPdf* model2_ws = w.pdf("sp_ph");
+   
+   RooDataHist *data = model2_ws->generateBinned(x, 1100000);
    w.import(*data);
    w.SetName("BBworkspace");
    w.writeToFile("BBworkspace.root");
 
    // Create NLL
-   RooArgSet * allParams = model2.getParameters(data);
-   RemoveConstantParameters(allParams);
-   RooAbsReal *nll = model2.createNLL(*data, NumCPU(cpu, 0));
+   RooArgSet * allParams = model2_ws->getParameters(data);
+   RooStats::RemoveConstantParameters(allParams);
+   RooAbsReal *nll = model2_ws->createNLL(*data, RooFit::NumCPU(cpu, 0));
    RooMinimizer m(*nll);
    m.setPrintLevel(-1);
    m.setStrategy(0);
    m.setLogFile("interplog");
-   RooArgSet * printpars= model2.getParameters(data);
+   RooArgSet * printpars= model2_ws->getParameters(data);
    std::cout<<"How many parameters"<<std::endl;
    printpars->Print();
    while (state.KeepRunning()){
@@ -840,9 +842,9 @@ static void SmallArguments(benchmark::internal::Benchmark* b) {
       b->Args({i*10, j});
 }
 
-BENCHMARK(BM_RooFit_BBlite)->Apply(SmallArguments)->UseRealTime()->Iterations(120);
+BENCHMARK(BM_RooFit_BBlite)->Apply(SmallArguments)->UseRealTime()->Iterations(12);
 // BENCHMARK(BM_RooFit_BBliteNoAtt)->Apply(SmallArguments)->UseRealTime()->Iterations(12);
-BENCHMARK(BM_RooFit_HistStatNom)->Apply(SmallArguments)->UseRealTime()->Iterations(12);
+// BENCHMARK(BM_RooFit_HistStatNom)->Apply(SmallArguments)->UseRealTime()->Iterations(12);
 // BENCHMARK(BM_RooFit_HistStatNoAtt)->Apply(SmallArguments)->UseRealTime()->Iterations(12);
 // BENCHMARK(BM_RooFit_HistStatHistoSys)->Apply(SmallArguments)->UseRealTime()->Iterations(12);
 // BENCHMARK(BM_RooFit_HistStatTwoChannel)->Apply(SmallArguments)->UseRealTime()->Iterations(12);
