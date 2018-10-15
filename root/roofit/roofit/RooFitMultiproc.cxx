@@ -25,6 +25,7 @@
 #include "RooRealSumPdf.h"
 #include "RooNLLVar.h"
 #include <MultiProcess/NLLVar.h>
+#include <MultiProcess/GradMinimizer.h>
 
 
 using namespace RooFit ;
@@ -210,6 +211,50 @@ static void BM_RooFit_BinnedMultiProc(benchmark::State &state)
    delete pdf;
    delete nll;
 }
+
+
+static void BM_RooFit_BinnedMultiProcGradient(benchmark::State &state)
+{
+  std::cout << "About to run binned fit with MultiProcess::GradMinimizer" << std::endl;
+  gErrorIgnoreLevel = kInfo;
+  RooMsgService::instance().setGlobalKillBelow(RooFit::FATAL);
+  RooMsgService::instance().getStream(1).removeTopic(RooFit::Minimization);
+  RooMsgService::instance().getStream(1).removeTopic(RooFit::NumIntegration);
+  RooMsgService::instance().getStream(1).removeTopic(RooFit::Eval);
+  int bins = state.range(0);
+  int cpu = state.range(1);
+  TFile *infile = new TFile("workspace.root","RECREATE");
+  //   if (infile->IsZombie()) {
+  buildBinnedTest(1, bins, 0, "workspace.root");
+  std::cout << "Workspace for tests was created!" << std::endl;
+  //}
+  infile = TFile::Open("workspace.root");
+  RooWorkspace *w = static_cast<RooWorkspace *>(infile->Get("BinnedWorkspace"));
+  RooAbsData *data = w->data("obsData");
+  ModelConfig *mc = static_cast<ModelConfig *>(w->genobj("ModelConfig"));
+  RooAbsPdf *pdf = w->pdf(mc->GetPdf()->GetName());
+  RooAbsReal *nll = pdf->createNLL(*data);
+
+  std::size_t NumCPU = cpu;
+
+  MultiProcess::GradMinimizer m(*nll, NumCPU);
+  m.setPrintLevel(-1);
+  m.setStrategy(0);
+  m.setProfile(0);
+//  m.setLogFile("benchmigradnchannellog");
+  std::cout << "STARTING Migrad BENCHMARKING"<< std::endl;
+  for (auto _ : state) {
+    std::cout << "...running Migrad..." << std::endl;
+    throw runtime_error("MOET NOG VALUES RESETTEN VOOR NIEUWE RUN... EN MOET DAT TROUWENS NIET BUITEN DE DAADWERKELIJKE BENCHMARK TIMING?");
+    m.migrad();
+    std::cout << "...terminating TaskManager..." << std::endl;
+    MultiProcess::TaskManager::instance()->terminate();
+  }
+  delete nll;
+  delete data;
+  delete infile;
+}
+
 
 static void BM_RooFit_BDecayMultiproc(benchmark::State &state)
 {
@@ -415,8 +460,8 @@ static void EventArguments(benchmark::internal::Benchmark* b) {
       b->Args({i*1000, j});
 }
 
-BENCHMARK(BM_RooFit_BDecayMultiproc)->Apply(EventArguments)->UseRealTime()->Iterations(12);
-BENCHMARK(BM_RooFit_BDecayMPFE)->Apply(EventArguments)->UseRealTime()->Iterations(12);
+//BENCHMARK(BM_RooFit_BDecayMultiproc)->Apply(EventArguments)->UseRealTime()->Iterations(12);
+//BENCHMARK(BM_RooFit_BDecayMPFE)->Apply(EventArguments)->UseRealTime()->Iterations(12);
 //BENCHMARK(BM_RooFit_BDecayGaussResolution)->Apply(EventArguments)->UseRealTime()->Iterations(12);
 //BENCHMARK(BM_RooFit_BDecayDoubleGauss)->Apply(EventArguments)->UseRealTime()->Iterations(12);
 
@@ -426,7 +471,8 @@ static void BinArguments(benchmark::internal::Benchmark* b) {
       b->Args({i+5, j});
 }
 
-BENCHMARK(BM_RooFit_BinnedMPFE)->Apply(BinArguments)->UseRealTime()->Unit(benchmark::kMicrosecond)->Iterations(10);
-BENCHMARK(BM_RooFit_BinnedMultiProc)->Apply(BinArguments)->UseRealTime()->Unit(benchmark::kMicrosecond)->Iterations(10);
+//BENCHMARK(BM_RooFit_BinnedMPFE)->Apply(BinArguments)->UseRealTime()->Unit(benchmark::kMicrosecond)->Iterations(10);
+//BENCHMARK(BM_RooFit_BinnedMultiProc)->Apply(BinArguments)->UseRealTime()->Unit(benchmark::kMicrosecond)->Iterations(10);
+BENCHMARK(BM_RooFit_BinnedMultiProcGradient)->Apply(BinArguments)->UseRealTime()->Unit(benchmark::kMicrosecond)->Iterations(10);
 
 BENCHMARK_MAIN();
