@@ -9,4 +9,4 @@ RB_ADD_GBENCHMARK(RoofitUnBinnedBenchmark
 
 RB_ADD_GBENCHMARK(RoofitMultiproc
   RooFitMultiproc.cxx
-  LIBRARIES Core Hist MathCore RIO RooFit RooStats RooFitCore HistFactory)
+  LIBRARIES Core Hist MathCore RIO RooFit RooStats RooFitCore HistFactory RooFitZMQ)
