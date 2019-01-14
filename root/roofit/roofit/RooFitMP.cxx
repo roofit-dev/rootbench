@@ -403,58 +403,6 @@ static void BM_RooFit_NDUnbinnedGaussianMultiProcessGradMinimizer(benchmark::Sta
 }
 
 
-static void BM_RooFit_MP_GradMinimizer_workspace_file(benchmark::State &state) {
-  RooMsgService::instance().setGlobalKillBelow(RooFit::ERROR);
-
-  auto NumCPU = static_cast<std::size_t>(state.range(0));
-
-  std::size_t seed = 1;
-  RooRandom::randomGenerator()->SetSeed(seed);
-
-  TFile *_file0 = TFile::Open("bench_this_workspace.root");
-
-  // TODO: add functionality to read parameters from text file (names of workspace, dataset, modelconfig)
-
-  RooWorkspace* w = static_cast<RooWorkspace*>(gDirectory->Get("HWWRun2GGF"));
-
-  RooAbsData *data = w->data("obsData");
-  auto mc = dynamic_cast<ModelConfig *>(w->genobj("ModelConfig"));
-  RooAbsPdf *pdf = w->pdf(mc->GetPdf()->GetName());
-
-  RooAbsReal *nll = pdf->createNLL(*data);
-
-  RooArgSet* values = nll->getParameters(data);
-  values->add(*pdf);
-  values->add(*nll);
-
-  MultiProcess::GradMinimizer m(*nll, NumCPU);
-
-  m.setPrintLevel(-1);
-  m.setStrategy(0);
-  m.setProfile(false);
-
-  std::unique_ptr<RooArgSet> savedValues {dynamic_cast<RooArgSet *>(values->snapshot())};
-
-  for (auto _ : state) {
-    // reset values
-    *values = *savedValues;
-
-    auto start = std::chrono::high_resolution_clock::now();
-
-    // do minimization
-    m.migrad();
-    MultiProcess::TaskManager::instance()->terminate();
-
-    // report time
-    auto end   = std::chrono::high_resolution_clock::now();
-    auto elapsed_seconds =
-        std::chrono::duration_cast<std::chrono::duration<double>>(
-            end - start);
-    state.SetIterationTime(elapsed_seconds.count());
-  }
-}
-
-
 static void BinArguments(benchmark::internal::Benchmark* b) {
   for (int bins = 6; bins <= 15; bins+=3) {
     for (int cpus = 1; cpus <= 8; ++cpus) {
@@ -470,7 +418,6 @@ static void NumCPUArguments(benchmark::internal::Benchmark* b) {
   }
 }
 BENCHMARK(BM_RooFit_1DUnbinnedGaussianMultiProcessGradMinimizer)->Apply(NumCPUArguments)->UseManualTime()->Unit(benchmark::kMillisecond);
-BENCHMARK(BM_RooFit_MP_GradMinimizer_workspace_file)->Apply(NumCPUArguments)->UseManualTime()->Unit(benchmark::kMillisecond);
 
 static void CPUsDimsArguments(benchmark::internal::Benchmark* b) {
   for (int cpus = 1; cpus <= 8; ++cpus) {

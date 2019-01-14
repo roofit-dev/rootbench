@@ -9,7 +9,10 @@ RB_ADD_GBENCHMARK(RoofitUnBinnedBenchmark
 
 find_package(ZeroMQ REQUIRED)
 
-RB_ADD_GBENCHMARK(RoofitMultiproc
-  RooFitMultiproc.cxx
-  LIBRARIES Core Hist MathCore RIO RooFit RooStats RooFitCore HistFactory RooFitZMQ)
-target_include_directories(RoofitMultiproc PRIVATE ${ZeroMQ_INCLUDE_DIR}) # FIXME: somehow, this does not get propagated from RooFitZMQ to RoofitMultiproc
+RB_ADD_GBENCHMARK(RoofitMP RooFitMP.cxx
+LIBRARIES Core Hist MathCore RIO RooFit RooStats RooFitCore HistFactory RooFitZMQ)
+target_include_directories(RoofitMP PRIVATE ${ZeroMQ_INCLUDE_DIR}) # FIXME: somehow, this does not get propagated from RooFitZMQ to RoofitMP
+
+RB_ADD_GBENCHMARK(RoofitMPworkspace RooFitMP_workspace.cxx
+        LIBRARIES Core Hist MathCore RIO RooFit RooStats RooFitCore HistFactory RooFitZMQ)
+target_include_directories(RoofitMPworkspace PRIVATE ${ZeroMQ_INCLUDE_DIR}) # FIXME: somehow, this does not get propagated from RooFitZMQ to RoofitMPworkspace
