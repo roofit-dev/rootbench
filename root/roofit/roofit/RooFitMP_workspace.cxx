@@ -122,7 +122,6 @@ static void BM_RooFit_RooMinimizer_workspace_file(benchmark::State &state) {
 
     // do minimization
     m.migrad();
-    RooFit::MultiProcess::TaskManager::instance()->terminate();
 
     // report time
     auto end   = std::chrono::high_resolution_clock::now();
