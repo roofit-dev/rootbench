@@ -424,6 +424,7 @@ static void CPUsDimsArguments(benchmark::internal::Benchmark* b) {
     for (int dims = 1; dims <= 8; ++dims) {
       b->Args({cpus, dims});
     }
+    b->Args({cpus, 265});
   }
 }
 BENCHMARK(BM_RooFit_NDUnbinnedGaussianMultiProcessGradMinimizer)->Apply(CPUsDimsArguments)->UseManualTime()->Unit(benchmark::kMillisecond);
