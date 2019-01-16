@@ -63,7 +63,9 @@ static void BM_RooFit_MP_GradMinimizer_workspace_file(benchmark::State &state) {
     auto start = std::chrono::high_resolution_clock::now();
 
     // do minimization
+    std::cout << "start migrad\n";
     m.migrad();
+    std::cout << "end migrad\n";
     RooFit::MultiProcess::TaskManager::instance()->terminate();
 
     // report time
