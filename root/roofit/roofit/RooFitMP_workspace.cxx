@@ -53,6 +53,8 @@ static void BM_RooFit_MP_GradMinimizer_workspace_file(benchmark::State &state) {
   m.setPrintLevel(-1);
   m.setStrategy(0);
   m.setProfile(false);
+  m.optimizeConst(2);
+  m.setMinimizerType("Minuit2");
 
   std::unique_ptr<RooArgSet> savedValues {dynamic_cast<RooArgSet *>(values->snapshot())};
 
@@ -113,6 +115,8 @@ static void BM_RooFit_RooMinimizer_workspace_file(benchmark::State &state) {
   m.setPrintLevel(-1);
   m.setStrategy(0);
   m.setProfile(false);
+  m.optimizeConst(2);
+  m.setMinimizerType("Minuit2");
 
   std::unique_ptr<RooArgSet> savedValues {dynamic_cast<RooArgSet *>(values->snapshot())};
 
