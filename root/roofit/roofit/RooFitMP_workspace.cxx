@@ -9,6 +9,7 @@
 #include "RooRandom.h"
 #include "RooWorkspace.h"
 #include "MultiProcess/GradMinimizer.h"
+#include "RooTimer.h"
 
 #include "RooStats/ModelConfig.h"
 
@@ -58,6 +59,8 @@ static void BM_RooFit_MP_GradMinimizer_workspace_file(benchmark::State &state) {
 
   std::unique_ptr<RooArgSet> savedValues {dynamic_cast<RooArgSet *>(values->snapshot())};
 
+  RooWallTimer timer;
+
   for (auto _ : state) {
     // reset values
     *values = *savedValues;
@@ -68,7 +71,10 @@ static void BM_RooFit_MP_GradMinimizer_workspace_file(benchmark::State &state) {
     std::cout << "start migrad\n";
     m.migrad();
     std::cout << "end migrad\n";
+    timer.start();
     RooFit::MultiProcess::TaskManager::instance()->terminate();
+    timer.stop();
+    std::cout << "terminate: " << timer.timing_s() << "s\n";
 
     // report time
     auto end   = std::chrono::high_resolution_clock::now();
