@@ -372,7 +372,7 @@ static void BM_RooFit_NDUnbinnedGaussianMultiProcessGradMinimizer(benchmark::Sta
 
   std::unique_ptr<RooAbsReal> nll;
   std::unique_ptr<RooArgSet> values;
-  std::tie(nll, values) = generate_ND_gaussian_pdf_nll(w, n_dim, 100000/n_dim);
+  std::tie(nll, values) = generate_ND_gaussian_pdf_nll(w, n_dim, 10000/n_dim);
 
   MultiProcess::GradMinimizer m(*nll, NumCPU);
 
@@ -410,21 +410,18 @@ static void BinArguments(benchmark::internal::Benchmark* b) {
     }
   }
 }
-BENCHMARK(BM_RooFit_BinnedMultiProcGradient)->Apply(BinArguments)->UseManualTime()->Unit(benchmark::kMillisecond);
+//BENCHMARK(BM_RooFit_BinnedMultiProcGradient)->Apply(BinArguments)->UseManualTime()->Unit(benchmark::kMillisecond);
 
 static void NumCPUArguments(benchmark::internal::Benchmark* b) {
   for (int cpus = 1; cpus <= 8; ++cpus) {
     b->Args({cpus});
   }
 }
-BENCHMARK(BM_RooFit_1DUnbinnedGaussianMultiProcessGradMinimizer)->Apply(NumCPUArguments)->UseManualTime()->Unit(benchmark::kMillisecond);
+//BENCHMARK(BM_RooFit_1DUnbinnedGaussianMultiProcessGradMinimizer)->Apply(NumCPUArguments)->UseManualTime()->Unit(benchmark::kMillisecond);
 
 static void CPUsDimsArguments(benchmark::internal::Benchmark* b) {
-  for (int cpus = 1; cpus <= 8; ++cpus) {
-    for (int dims = 1; dims <= 8; ++dims) {
-      b->Args({cpus, dims});
-    }
-    b->Args({cpus, 265});
+  for (int cpus = 1; cpus <= 4; ++cpus) {
+    b->Args({cpus, 3*5});  // the Gaussians themselves have 4 parameters per "dim" given here, so it's really 3*4*5
   }
 }
 BENCHMARK(BM_RooFit_NDUnbinnedGaussianMultiProcessGradMinimizer)->Apply(CPUsDimsArguments)->UseManualTime()->Unit(benchmark::kMillisecond);
