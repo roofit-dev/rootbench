@@ -410,14 +410,14 @@ static void BinArguments(benchmark::internal::Benchmark* b) {
     }
   }
 }
-//BENCHMARK(BM_RooFit_BinnedMultiProcGradient)->Apply(BinArguments)->UseManualTime()->Unit(benchmark::kMillisecond);
+BENCHMARK(BM_RooFit_BinnedMultiProcGradient)->Apply(BinArguments)->UseManualTime()->Unit(benchmark::kMillisecond);
 
 static void NumCPUArguments(benchmark::internal::Benchmark* b) {
   for (int cpus = 1; cpus <= 8; ++cpus) {
     b->Args({cpus});
   }
 }
-//BENCHMARK(BM_RooFit_1DUnbinnedGaussianMultiProcessGradMinimizer)->Apply(NumCPUArguments)->UseManualTime()->Unit(benchmark::kMillisecond);
+BENCHMARK(BM_RooFit_1DUnbinnedGaussianMultiProcessGradMinimizer)->Apply(NumCPUArguments)->UseManualTime()->Unit(benchmark::kMillisecond);
 
 static void CPUsDimsArguments(benchmark::internal::Benchmark* b) {
   for (int cpus = 1; cpus <= 4; ++cpus) {
