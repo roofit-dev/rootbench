@@ -282,6 +282,7 @@ static void BM_RooFit_BinnedMultiProcGradient(benchmark::State &state) {
   m.setPrintLevel(-1);
   m.setStrategy(0);
   m.setProfile(false);
+  m.optimizeConst(2);
 
   RooArgSet* values = nll->getParameters(data);
   values->add(*pdf);
@@ -334,6 +335,7 @@ static void BM_RooFit_1DUnbinnedGaussianMultiProcessGradMinimizer(benchmark::Sta
   m.setPrintLevel(-1);
   m.setStrategy(0);
   m.setProfile(false);
+  m.optimizeConst(2);
 
 //  RooArgSet *savedValues = dynamic_cast<RooArgSet *>(values->snapshot());
   std::unique_ptr<RooArgSet> savedValues {dynamic_cast<RooArgSet *>(values->snapshot())};
@@ -379,6 +381,7 @@ static void BM_RooFit_NDUnbinnedGaussianMultiProcessGradMinimizer(benchmark::Sta
   m.setPrintLevel(-1);
   m.setStrategy(0);
   m.setProfile(false);
+  m.optimizeConst(2);
 
 //  RooArgSet *savedValues = dynamic_cast<RooArgSet *>(values->snapshot());
   std::unique_ptr<RooArgSet> savedValues {dynamic_cast<RooArgSet *>(values->snapshot())};

@@ -134,6 +134,7 @@ static void BM_RooFit_BinnedTestMigrad_NChannel(benchmark::State &state)
    m.setPrintLevel(-1);
    m.setStrategy(0);
    m.setProfile(0);
+   m.optimizeConst(2);
    m.setLogFile("benchmigradnchannellog");
    for (auto _ : state) {
       m.migrad();
@@ -172,6 +173,7 @@ static void BM_RooFit_BinnedTestHesse_NChannel(benchmark::State &state)
    m.setPrintLevel(-1);
    m.setStrategy(0);
    m.setProfile(0);
+   m.optimizeConst(2);
    m.setLogFile("benchhessenchannellog");
    m.migrad();
    w->loadSnapshot("no_fit");
@@ -213,6 +215,7 @@ static void BM_RooFit_BinnedTestMinos_NChannel(benchmark::State &state)
    m.setPrintLevel(-1);
    m.setStrategy(0);
    m.setProfile(0);
+   m.optimizeConst(2);
    m.setLogFile("benchhessenchannellog");
    m.migrad();
    m.hesse();
@@ -269,6 +272,7 @@ static void BM_RooFit_BinnedTestMigrad_NBin(benchmark::State &state)
    m.setPrintLevel(-1);
    m.setStrategy(0);
    m.setProfile(0);
+   m.optimizeConst(2);
    m.setLogFile("benchmigradnbinlog");
    for (auto _ : state) {
       m.migrad();
@@ -306,6 +310,7 @@ static void BM_RooFit_BinnedTestHesse_NBin(benchmark::State &state)
    m.setPrintLevel(-1);
    m.setStrategy(0);
    m.setProfile(0);
+   m.optimizeConst(2);
    m.setLogFile("benchhessenbinlog");
    m.migrad();
    w->loadSnapshot("no_fit");
@@ -347,6 +352,7 @@ static void BM_RooFit_BinnedTestMinos_NBin(benchmark::State &state)
    m.setPrintLevel(-1);
    m.setStrategy(0);
    m.setProfile(0);
+   m.optimizeConst(2);
    m.setLogFile("benchhessenbinlog");
    m.migrad();
    m.hesse();
