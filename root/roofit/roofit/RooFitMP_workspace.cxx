@@ -15,6 +15,41 @@
 
 #include "benchmark/benchmark.h"
 
+std::tuple<std::string, std::string, std::string, std::string> read_config_file() {
+  std::string filename, workspace_name, dataset_name, modelconfig_name;
+
+  std::ifstream workspace_file_config_file("workspace_benchmark.conf");
+  if (workspace_file_config_file.is_open()) {
+    std::getline(workspace_file_config_file, filename);
+    std::getline(workspace_file_config_file, workspace_name);
+    std::getline(workspace_file_config_file, dataset_name);
+    std::getline(workspace_file_config_file, modelconfig_name);
+  } else {
+    throw runtime_error("Could not open workspace_benchmark.conf configuration file");
+  }
+  return {filename, workspace_name, dataset_name, modelconfig_name};
+}
+
+
+RooAbsReal * create_nll(RooAbsPdf * pdf, RooAbsData * data,
+                        const RooArgSet * global_observables,
+                        const RooArgSet * nuisance_parameters) {
+  RooAbsReal *nll;
+
+  if (global_observables != nullptr) {
+    nll = pdf->createNLL(*data,
+                         RooFit::GlobalObservables(*global_observables),
+                         RooFit::Constrain(*nuisance_parameters),
+                         RooFit::Offset(kTRUE));
+  } else {
+    nll = pdf->createNLL(*data,
+                         RooFit::Constrain(*nuisance_parameters),
+                         RooFit::Offset(kTRUE));
+  }
+
+  return nll;
+}
+
 
 static void BM_RooFit_MP_GradMinimizer_workspace_file(benchmark::State &state) {
   RooMsgService::instance().setGlobalKillBelow(RooFit::ERROR);
@@ -26,24 +61,21 @@ static void BM_RooFit_MP_GradMinimizer_workspace_file(benchmark::State &state) {
 
   // read filename and dataset / modelconfig names from configuration file
   std::string filename, workspace_name, dataset_name, modelconfig_name;
-  std::ifstream workspace_file_config_file("workspace_benchmark.conf");
-  if (workspace_file_config_file.is_open()) {
-    std::getline(workspace_file_config_file, filename);
-    std::getline(workspace_file_config_file, workspace_name);
-    std::getline(workspace_file_config_file, dataset_name);
-    std::getline(workspace_file_config_file, modelconfig_name);
-  } else {
-    throw runtime_error("Could not open workspace_benchmark.conf configuration file");
-  }
+  Bool_t offset;
+  std::tie(filename, workspace_name, dataset_name, modelconfig_name) = read_config_file();
 
   TFile *_file0 = TFile::Open(filename.c_str());
   RooWorkspace* w = static_cast<RooWorkspace*>(gDirectory->Get(workspace_name.c_str()));
 
   RooAbsData *data = w->data(dataset_name.c_str());
   auto mc = dynamic_cast<RooStats::ModelConfig *>(w->genobj(modelconfig_name.c_str()));
+
+  auto global_observables = mc->GetGlobalObservables();
+  auto nuisance_parameters = mc->GetNuisanceParameters();
+
   RooAbsPdf *pdf = w->pdf(mc->GetPdf()->GetName());
 
-  RooAbsReal *nll = pdf->createNLL(*data);
+  RooAbsReal *nll = create_nll(pdf, data, global_observables, nuisance_parameters);
 
   RooArgSet* values = nll->getParameters(data);
   values->add(*pdf);
@@ -93,24 +125,20 @@ static void BM_RooFit_RooMinimizer_workspace_file(benchmark::State &state) {
 
   // read filename and dataset / modelconfig names from configuration file
   std::string filename, workspace_name, dataset_name, modelconfig_name;
-  std::ifstream workspace_file_config_file("workspace_benchmark.conf");
-  if (workspace_file_config_file.is_open()) {
-    std::getline(workspace_file_config_file, filename);
-    std::getline(workspace_file_config_file, workspace_name);
-    std::getline(workspace_file_config_file, dataset_name);
-    std::getline(workspace_file_config_file, modelconfig_name);
-  } else {
-    throw runtime_error("Could not open workspace_benchmark.conf configuration file");
-  }
+  std::tie(filename, workspace_name, dataset_name, modelconfig_name) = read_config_file();
 
   TFile *_file0 = TFile::Open(filename.c_str());
   RooWorkspace* w = static_cast<RooWorkspace*>(gDirectory->Get(workspace_name.c_str()));
 
   RooAbsData *data = w->data(dataset_name.c_str());
   auto mc = dynamic_cast<RooStats::ModelConfig *>(w->genobj(modelconfig_name.c_str()));
+
+  auto global_observables = mc->GetGlobalObservables();
+  auto nuisance_parameters = mc->GetNuisanceParameters();
+
   RooAbsPdf *pdf = w->pdf(mc->GetPdf()->GetName());
 
-  RooAbsReal *nll = pdf->createNLL(*data);
+  RooAbsReal *nll = create_nll(pdf, data, global_observables, nuisance_parameters);
 
   RooArgSet* values = nll->getParameters(data);
   values->add(*pdf);
