@@ -185,6 +185,8 @@ static void NumCPUArguments(benchmark::internal::Benchmark* b) {
   for (int cpus = 1; cpus <= 8; ++cpus) {
     b->Args({cpus});
   }
+  b->Args({16});
+  b->Args({32});
 }
 
 BENCHMARK(BM_RooFit_MP_GradMinimizer_workspace_file)->Apply(NumCPUArguments)->UseManualTime()->Unit(benchmark::kMillisecond);
