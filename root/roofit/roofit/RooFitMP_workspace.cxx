@@ -115,6 +115,10 @@ static void BM_RooFit_MP_GradMinimizer_workspace_file(benchmark::State &state) {
             end - start);
     state.SetIterationTime(elapsed_seconds.count());
   }
+
+  delete values;
+  delete nll;
+  delete _file0;
 }
 
 static void BM_RooFit_RooMinimizer_workspace_file(benchmark::State &state) {
@@ -170,6 +174,10 @@ static void BM_RooFit_RooMinimizer_workspace_file(benchmark::State &state) {
             end - start);
     state.SetIterationTime(elapsed_seconds.count());
   }
+
+  delete values;
+  delete nll;
+  delete _file0;
 }
 
 
