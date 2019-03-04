@@ -86,7 +86,11 @@ static void BM_RooFit_MP_GradMinimizer_workspace_file_noOptConst(benchmark::Stat
   m.setPrintLevel(-1);
   m.setStrategy(0);
   m.setProfile(false);
-  m.optimizeConst(0);
+  // 1 only caches always constant terms; this is a one-time pass at initialization
+  // and does not give any variation in caching behavior at run-time. This allows us
+  // to gauge the impact of level 2 optimization that we use in RooFitMP_workspace,
+  // which does have run-time effects due to scheduling.
+  m.optimizeConst(1);
   m.setMinimizerType("Minuit2");
 
   std::unique_ptr<RooArgSet> savedValues {dynamic_cast<RooArgSet *>(values->snapshot())};
@@ -153,7 +157,11 @@ static void BM_RooFit_RooMinimizer_workspace_file_noOptConst(benchmark::State &s
   m.setPrintLevel(-1);
   m.setStrategy(0);
   m.setProfile(false);
-  m.optimizeConst(0);
+  // 1 only caches always constant terms; this is a one-time pass at initialization
+  // and does not give any variation in caching behavior at run-time. This allows us
+  // to gauge the impact of level 2 optimization that we use in RooFitMP_workspace,
+  // which does have run-time effects due to scheduling.
+  m.optimizeConst(1);
   m.setMinimizerType("Minuit2");
 
   std::unique_ptr<RooArgSet> savedValues {dynamic_cast<RooArgSet *>(values->snapshot())};
