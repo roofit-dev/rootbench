@@ -20,3 +20,7 @@ target_include_directories(RoofitMPworkspace PRIVATE ${ZeroMQ_INCLUDE_DIR}) # FI
 RB_ADD_GBENCHMARK(RoofitMPworkspaceNoOptConst RooFitMP_workspace_noOptConst.cxx
         LIBRARIES Core Hist MathCore RIO RooFit RooStats RooFitCore HistFactory RooFitZMQ)
 target_include_directories(RoofitMPworkspaceNoOptConst PRIVATE ${ZeroMQ_INCLUDE_DIR}) # FIXME: somehow, this does not get propagated from RooFitZMQ
+
+RB_ADD_GBENCHMARK(RoofitMPworkspaceNumCPUInConfigFile RooFitMP_workspace_NumCPUInConfigFile.cxx
+        LIBRARIES Core Hist MathCore RIO RooFit RooStats RooFitCore HistFactory RooFitZMQ)
+target_include_directories(RoofitMPworkspaceNumCPUInConfigFile PRIVATE ${ZeroMQ_INCLUDE_DIR}) # FIXME: somehow, this does not get propagated from RooFitZMQ
