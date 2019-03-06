@@ -52,7 +52,12 @@ RooAbsReal * create_nll(RooAbsPdf * pdf, RooAbsData * data,
 
 
 static void BM_RooFit_MP_GradMinimizer_workspace_file(benchmark::State &state) {
-  RooMsgService::instance().setGlobalKillBelow(RooFit::ERROR);
+//  RooMsgService::instance().setGlobalKillBelow(RooFit::ERROR);
+  RooMsgService::instance().deleteStream(0);
+  RooMsgService::instance().deleteStream(0);
+
+  RooMsgService::instance().addStream(RooFit::DEBUG, RooFit::Topic(RooFit::Benchmarking1));
+  RooMsgService::instance().addStream(RooFit::DEBUG, RooFit::Topic(RooFit::Benchmarking2));
 
   auto NumCPU = static_cast<std::size_t>(state.range(0));
 
@@ -102,13 +107,13 @@ static void BM_RooFit_MP_GradMinimizer_workspace_file(benchmark::State &state) {
     auto start = std::chrono::high_resolution_clock::now();
 
     // do minimization
-    std::cout << "start migrad at " << get_time() << std::endl;
+    oocxcoutD((TObject*)nullptr,Benchmarking1) << "start migrad at " << get_time() << std::endl;
     m.migrad();
-    std::cout << "end migrad at " << get_time() << std::endl;
+    oocxcoutD((TObject*)nullptr,Benchmarking1) << "end migrad at " << get_time() << std::endl;
     timer.start();
     RooFit::MultiProcess::TaskManager::instance()->terminate();
     timer.stop();
-    std::cout << "terminate: " << timer.timing_s() << "s" << std::endl;
+    oocxcoutD((TObject*)nullptr,Benchmarking1) << "terminate: " << timer.timing_s() << "s" << std::endl;
 
     // report time
     auto end   = std::chrono::high_resolution_clock::now();
