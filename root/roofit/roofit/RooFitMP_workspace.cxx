@@ -93,6 +93,8 @@ static void BM_RooFit_MP_GradMinimizer_workspace_file(benchmark::State &state) {
 
   RooWallTimer timer;
 
+  auto get_time = [](){return std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();};
+
   for (auto _ : state) {
     // reset values
     *values = *savedValues;
@@ -100,9 +102,9 @@ static void BM_RooFit_MP_GradMinimizer_workspace_file(benchmark::State &state) {
     auto start = std::chrono::high_resolution_clock::now();
 
     // do minimization
-    std::cout << "start migrad" << std::endl;
+    std::cout << "start migrad at " << get_time() << std::endl;
     m.migrad();
-    std::cout << "end migrad" << std::endl;
+    std::cout << "end migrad at " << get_time() << std::endl;
     timer.start();
     RooFit::MultiProcess::TaskManager::instance()->terminate();
     timer.stop();
