@@ -8,10 +8,6 @@ RB_ADD_GBENCHMARK(RoofitUnBinnedBenchmark
   LABEL long
   LIBRARIES Core Hist MathCore RIO RooFit RooStats RooFitCore HistFactory)
 
-RB_ADD_GBENCHMARK(RoofitUnBinnedBenchmark
-  RooFitUnBinnedBenchmarks.cxx
-  LIBRARIES Core Hist MathCore RIO RooFit RooStats RooFitCore HistFactory)
-
 find_package(ZeroMQ REQUIRED)
 
 RB_ADD_GBENCHMARK(RoofitMP RooFitMP.cxx
