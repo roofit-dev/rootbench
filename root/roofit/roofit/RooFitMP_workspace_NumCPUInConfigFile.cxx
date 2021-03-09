@@ -85,6 +85,9 @@ static void BM_RooFit_MP_GradMinimizer_workspace_file_NumCPUInConfigFile(benchma
 
   RooAbsPdf *pdf = w->pdf(mc->GetPdf()->GetName());
 
+  // THIS ONLY WORKS FOR THE LARGE WORKSPACE BY CARSTEN, MEANT FOR ACAT19 ONLY
+  w->var("mu")->setVal(1.5);
+
   RooAbsReal *nll = create_nll(pdf, data, global_observables, nuisance_parameters);
 
   RooArgSet* values = nll->getParameters(data);
@@ -98,6 +101,7 @@ static void BM_RooFit_MP_GradMinimizer_workspace_file_NumCPUInConfigFile(benchma
   m.setProfile(false);
   m.optimizeConst(2);
   m.setMinimizerType("Minuit2");
+  m.setVerbose(kTRUE);
 
   std::unique_ptr<RooArgSet> savedValues {dynamic_cast<RooArgSet *>(values->snapshot())};
 
@@ -155,6 +159,9 @@ static void BM_RooFit_RooMinimizer_workspace_file_NumCPUInConfigFile(benchmark::
 
   RooAbsPdf *pdf = w->pdf(mc->GetPdf()->GetName());
 
+  // THIS ONLY WORKS FOR THE LARGE WORKSPACE BY CARSTEN, MEANT FOR ACAT19 ONLY
+  w->var("mu")->setVal(1.5);
+
   RooAbsReal *nll = create_nll(pdf, data, global_observables, nuisance_parameters);
 
   RooArgSet* values = nll->getParameters(data);
@@ -168,6 +175,7 @@ static void BM_RooFit_RooMinimizer_workspace_file_NumCPUInConfigFile(benchmark::
   m.setProfile(false);
   m.optimizeConst(2);
   m.setMinimizerType("Minuit2");
+  m.setVerbose(kTRUE);
 
   std::unique_ptr<RooArgSet> savedValues {dynamic_cast<RooArgSet *>(values->snapshot())};
 
