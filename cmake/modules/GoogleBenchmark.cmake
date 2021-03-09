@@ -2,11 +2,14 @@ include(ExternalProject)
 #---Removing -Woverloaded-virtual from inherited ROOT compilation flags (gbenchmark is crashing)
 string(REPLACE "-Woverloaded-virtual" "" GBENCHMARK_CMAKE_CXX_FLAGS ${ROOT_CXX_FLAGS})
 
+set(GBENCHMARK_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/googlebenchmark-prefix")
+set(GBENCHMARK_LIBRARY_NAME ${CMAKE_STATIC_LIBRARY_PREFIX}benchmark${CMAKE_STATIC_LIBRARY_SUFFIX})
+
 #---Find and install google benchmark
 ExternalProject_Add(
   googlebenchmark
   GIT_REPOSITORY https://github.com/google/benchmark.git
-  GIT_TAG v1.3.0
+  GIT_TAG v1.5.0
   UPDATE_COMMAND ""
   # TIMEOUT 10
   # # Force separate output paths for debug and release builds to allow easy
@@ -15,15 +18,16 @@ ExternalProject_Add(
   #            -DCMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE:PATH=ReleaseLibs
   #            -Dgtest_force_shared_crt=ON
   CMAKE_ARGS -G ${CMAKE_GENERATOR}
+  -DCMAKE_INSTALL_PREFIX:PATH=${GBENCHMARK_PREFIX}
   -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
   -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
   -DCMAKE_C_FLAGS=${CMAKE_C_FLAGS}
   -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
   -DCMAKE_CXX_FLAGS=${GBENCHMARK_CMAKE_CXX_FLAGS}
-  -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
+  -DBENCHMARK_ENABLE_TESTING=OFF
   # Disable install step
   INSTALL_COMMAND ""
-  BUILD_BYPRODUCTS "${CMAKE_BINARY_DIR}/googlebenchmark-prefix/src/googlebenchmark-build/src/libbenchmark.a"
+  BUILD_BYPRODUCTS "${GBENCHMARK_PREFIX}/src/googlebenchmark-build/src/${GBENCHMARK_LIBRARY_NAME}"
   # Wrap download, configure and build steps in a script to log output
   LOG_DOWNLOAD ON
   LOG_CONFIGURE ON
